@@ -6,6 +6,7 @@ import { usePuterStore } from '~/lib/puter';
 import { generateUUID } from '~/lib/utils';
 import { useNavigate } from 'react-router';
 import { prepareInstructions } from '../../constants';
+import { convertPdfToImage } from '~/lib/pdf2img';
 
 function upload() {
     const {auth,isLoading,fs,ai,kv} = usePuterStore();
@@ -14,10 +15,10 @@ function upload() {
     const [statusText,setStatusText] = useState(" ");
     const [file,setfile] = useState <File | null >(null)
 
-    const handleAnalyze = async({companyName,jobTitle,jobDiscription,file}:{
+    const handleAnalyze = async({companyName,jobTitle,jobDescription,file}:{
         companyName: string,
         jobTitle:string,
-        jobDiscription:string,
+        jobDescription:string,
         file:File
     })=>{
         setisProcessing(true);
@@ -46,23 +47,39 @@ function upload() {
             uploadedFile.path,
             prepareInstructions({jobTitle,jobDescription})
         )
-        if(feedback) return setStatusText('Error: Failed to Analyse Resume');
+        if(!feedback) return setStatusText('Error: Failed to Analyse Resume');
+        
+        const feedbackText = typeof feedback.message.content==='string'
+            ?feedback.message.content
+            :feedback.message.content[0].text;
+
+        //data.feedback = JSON.parse(feedbackText)
+        const cleaned = feedbackText
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+        data.feedback = JSON.parse(cleaned);
+        await kv.set(`resume:${uuid}`,JSON.stringify(data));
+        setStatusText('Analysis complete,Redirecting...')
+        console.log(data);
+        navigate(`/resume/${uuid}`)
     }
 
 
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        console.log("handle submit start")
         const form = e.currentTarget.closest('form');
         if(!form) return;
         const formData = new FormData(form);
 
         const companyName = formData.get('company-name') as string;
         const jobTitle = formData.get('job-title') as string;
-        const jobDiscription = formData.get('job-discription') as string;
+        const jobDescription = formData.get('job-discription') as string;
 
         if(!file) return;
-        handleAnalyze({companyName,jobTitle,jobDiscription,file})
+        handleAnalyze({companyName,jobTitle,jobDescription,file})
 
     }
 
@@ -91,12 +108,12 @@ function upload() {
                             <input type='text' name='company-name' placeholder='Company Name' id='company-name'/>
                         </div>
                         <div className='form-div'>
-                            <label htmlFor="job-title">Comapny Name</label>
-                            <textarea rows={5} name='job-title' placeholder='Job Title' id='job-title'/>
+                            <label htmlFor="job-discription">Job Title</label>
+                            <input type='text' name='job-title' placeholder='Job Title' id='job-title'/>
                         </div>
                         <div className='form-div'>
-                            <label htmlFor="job-discription">Job Discription</label>
-                            <input type='text' name='job-discription' placeholder='Discription' id='job-discription'/>
+                            <label htmlFor="job-description ">Job Discription</label>
+                            <textarea rows={5} name='job-description' placeholder='Job Description' id='job-title'/>
                         </div>
                         <div className='form-div'>
                             <label htmlFor="uploader">Upload Resume</label>

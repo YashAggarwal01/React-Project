@@ -54,11 +54,26 @@ function upload() {
             :feedback.message.content[0].text;
 
         //data.feedback = JSON.parse(feedbackText)
-        const cleaned = feedbackText
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-        data.feedback = JSON.parse(cleaned);
+        let parsedFeedback;
+        try{
+            const cleaned = feedbackText
+                .replace(/```json/g, "")
+                .replace(/```/g, "")
+                .trim();
+
+            parsedFeedback = JSON.parse(cleaned);
+            data.feedback = parsedFeedback;
+
+        }catch (err) {
+            console.error("RAW AI RESPONSE:", feedbackText);
+
+            setStatusText("Error: Invalid AI response ❌");
+            setisProcessing(false);
+            return;
+        }
+
+
+
         await kv.set(`resume:${uuid}`,JSON.stringify(data));
         setStatusText('Analysis complete,Redirecting...')
         console.log(data);

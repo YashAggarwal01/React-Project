@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router';
 import { usePuterStore } from '~/lib/puter';
+import Summary from '~/components/Summary';
+import Details from '~/components/Details';
+import ATS from '~/components/ATS';
+
 
 export const meta = () => ([
     { title: 'Resumid | Auth' },
@@ -13,8 +17,13 @@ function Resume() {
 
     const [imageUrl, setImageUrl] = useState('');
     const [resumeUrl, setResumeUrl] = useState('');
-    const [feedback, setFeedback] = useState('');
+    const [feedback, setFeedback] = useState<Feedback | null>(null);
     const navigate = useNavigate();
+    useEffect(() => {
+    if(!isLoading && !auth.isAuthenticated){
+        navigate(`/auth?next=/resume/${id}`);
+    }
+    },[auth.isAuthenticated, isLoading, navigate])
 
     useEffect(() => {
         const loadResume = async () => {
@@ -69,7 +78,10 @@ function Resume() {
                     <h2 className='text-4xl text-black text-bold'>Resume Review</h2>
                     {feedback ? (
                         <div className='flex flex-col gap-8 animate-in fade-in duration-1000'>
-                            ATS Details
+                            <Summary feedback={feedback}/>
+                            <ATS score={feedback.ATS.score || 0} suggestions={feedback.ATS.tips || []} />
+                            <Details feedback={feedback}/>
+
                         </div>
                     ) : (
                         <img src="/images/resume-scan-2.gif" className='w-full'/>

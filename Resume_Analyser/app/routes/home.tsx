@@ -21,19 +21,22 @@ export default function Home() {
   const [loadingResumes,setLoadingResumes] = useState(false);
 
   useEffect(() => {
+    // Wait for Puter sign-in, otherwise kv.list returns nothing
+    if(!auth.isAuthenticated) return;
     const loadResume = async () => {
       setLoadingResumes(true);
-      const resumes = (await kv.list('resume;*',true)) as KVItem[];
+      const resumes = (await kv.list('resume:*',true)) as KVItem[];
       const parsedResumes = resumes?.map((resume) => (
         JSON.parse(resume.value) as Resume
 
-      ))
+      // Skip uploads whose analysis never finished
+      )).filter((resume) => resume.feedback)
       console.log('parsedResumes',parsedResumes)
       setResumes(parsedResumes || [] );
       setLoadingResumes(false)
     }
     loadResume();
-  },[])
+  },[auth.isAuthenticated])
   
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function Home() {
       </div>
       {loadingResumes && (
         <div className="flex flex-col items-center justify-center">
-          <img src="/images/resume-scam-2.gif" className="w-[200px]"/>
+          <img src="/images/resume-scan-2.gif" className="w-[200px]"/>
         </div>
       )
 

@@ -247,3 +247,46 @@ export const prepareInstructions = ({
   Provide the feedback using the following format: ${AIResponseFormat}
   Return the analysis as a JSON object, without any other text and without the backticks.
   Do not include any other text or comments.`;
+
+export const TailoredResumeFormat = `
+      interface TailoredResume {
+      name: string;
+      contact: string[]; //email, phone, location, links exactly as in the resume
+      summary: string; //2-3 sentences aimed at the job
+      skills: string[]; //most relevant to the job first
+      experience: {
+        role: string;
+        company: string;
+        duration: string;
+        bullets: string[]; //rewritten with job keywords, 2-5 per role
+      }[];
+      projects: {
+        name: string;
+        bullets: string[];
+      }[]; //empty array if none
+      education: {
+        degree: string;
+        institution: string;
+        duration: string;
+      }[];
+    }`;
+
+export const prepareTailoredResumeInstructions = ({
+  jobTitle,
+  jobDescription,
+  TailoredResumeFormat,
+}: {
+  jobTitle: string;
+  jobDescription: string;
+  TailoredResumeFormat: string;
+}) =>
+  `You are an expert resume writer and ATS (Applicant Tracking System) specialist.
+  Rewrite this resume so it is tailored to the job below.
+  Reorder and rephrase content to highlight what is most relevant, and use keywords from the job description where they truthfully apply.
+  Never invent jobs, companies, degrees, dates, certifications, skills or numbers that are not in the original resume.
+  Use strong action verbs and keep bullets concise.
+  The job title is: ${jobTitle}
+  The job description is: ${jobDescription || "Not provided, tailor to the job title only."}
+  Provide the resume using the following format: ${TailoredResumeFormat}
+  Return the resume as a JSON object, without any other text and without the backticks.
+  Do not include any other text or comments.`;

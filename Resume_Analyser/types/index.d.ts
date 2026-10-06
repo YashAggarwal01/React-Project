@@ -11,7 +11,32 @@ interface Resume {
   jobTitle?: string;
   imagePath: string;
   resumePath: string;
+  // upload.tsx saves the paths with these lowercase keys
+  imagepath?: string;
+  resumepath?: string;
   feedback: Feedback;
+}
+
+interface TailoredResume {
+  name: string;
+  contact: string[];
+  summary: string;
+  skills: string[];
+  experience: {
+    role: string;
+    company: string;
+    duration: string;
+    bullets: string[];
+  }[];
+  projects: {
+    name: string;
+    bullets: string[];
+  }[];
+  education: {
+    degree: string;
+    institution: string;
+    duration: string;
+  }[];
 }
 
 interface Feedback {

@@ -48,6 +48,7 @@ function FileUploader({onFileSelect}: FileUploaderProps) {
                                 </div>
                             </div>
                             <button className='p-2 cursor-pointer' onClick={(e) => {
+                                setfile(null)
                                 onFileSelect?.(null)
                             }}>
                                 <img src='/icons/cross.svg' alt='remove' className='w-4 h-4'/>

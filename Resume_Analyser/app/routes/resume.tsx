@@ -4,6 +4,8 @@ import { usePuterStore } from '~/lib/puter';
 import Summary from '~/components/Summary';
 import Details from '~/components/Details';
 import ATS from '~/components/ATS';
+import TailoredResume from '~/components/TailoredResume';
+import { getErrorMessage } from '~/lib/utils';
 
 
 export const meta = () => ([
@@ -18,6 +20,8 @@ function Resume() {
     const [imageUrl, setImageUrl] = useState('');
     const [resumeUrl, setResumeUrl] = useState('');
     const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const [resumeData, setResumeData] = useState<any>(null);
+    const [loadError, setLoadError] = useState('');
     const navigate = useNavigate();
     useEffect(() => {
     if(!isLoading && !auth.isAuthenticated){
@@ -26,12 +30,15 @@ function Resume() {
     },[auth.isAuthenticated, isLoading, navigate])
 
     useEffect(() => {
+        // Wait for Puter sign-in, otherwise kv/fs return nothing
+        if (!auth.isAuthenticated) return;
         const loadResume = async () => {
             console.log('1. starting, id:', id);
             const resume = await kv.get(`resume:${id}`);
             console.log('2. resume from kv:', resume);
-            if (!resume) return;
+            if (!resume) return setLoadError('Resume not found.');
             const data = JSON.parse(resume);
+            if (!data.feedback) return setLoadError('The analysis for this resume did not finish. Please upload it again.');
             console.log('3. data:', data);
             const resumeBlobRaw = await fs.read(data.resumepath);
             console.log('4. resumeBlob:', resumeBlobRaw);
@@ -47,10 +54,14 @@ function Resume() {
             const imageUrl = URL.createObjectURL(imageBlob);
             setImageUrl(imageUrl);
             setFeedback(data.feedback);
+            setResumeData(data);
             console.log('6. done:', { resumeUrl, imageUrl, feedback: data.feedback });
         };
-        loadResume();
-    }, [id, fs, kv]);
+        loadResume().catch((err) => {
+            console.error('LOAD ERROR:', err);
+            setLoadError(`Error: ${getErrorMessage(err)}`);
+        });
+    }, [id, fs, kv, auth.isAuthenticated]);
 
     return (
         <main className='pt-0'>
@@ -81,8 +92,19 @@ function Resume() {
                             <Summary feedback={feedback}/>
                             <ATS score={feedback.ATS.score || 0} suggestions={feedback.ATS.tips || []} />
                             <Details feedback={feedback}/>
+                            {resumeData && (
+                                <TailoredResume
+                                    id={id!}
+                                    resumePath={resumeData.resumepath}
+                                    jobTitle={resumeData.jobTitle || ''}
+                                    jobDescription={resumeData.jobDescription || ''}
+                                    savedResume={resumeData.tailoredResume}
+                                />
+                            )}
 
                         </div>
+                    ) : loadError ? (
+                        <p className='text-red-600 text-lg'>{loadError}</p>
                     ) : (
                         <img src="/images/resume-scan-2.gif" className='w-full'/>
 
